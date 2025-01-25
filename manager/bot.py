@@ -28,7 +28,7 @@ from tinydb import TinyDB, Query
 import utils.network as network
 from adapter.gpt4free import g4f_helper
 from chatbot.chatgpt import ChatGPTBrowserChatbot
-from config import OpenAIAuthBase, OpenAIAPIKey, Config, BingCookiePath, BardCookiePath, YiyanCookiePath, ChatGLMAPI, \
+from config import OpenAIAuthBase, DeepSeekAuths, DeepSeekApiKey, OpenAIAPIKey, Config, BingCookiePath, BardCookiePath, YiyanCookiePath, ChatGLMAPI, \
     PoeCookieAuth, SlackAppAccessToken, XinghuoCookiePath, G4fModels
 from exceptions import NoAvailableBotException, APIKeyNoFundsError
 
@@ -39,6 +39,7 @@ class BotManager:
     bots: Dict[str, List] = {
         "chatgpt-web": [],
         "openai-api": [],
+        "deepseek-chat": [],
         "poe-web": [],
         "bing-cookie": [],
         "bard-cookie": [],
@@ -51,6 +52,8 @@ class BotManager:
 
     openai: List[OpenAIAuthBase]
     """OpenAI Account infos"""
+
+    deepseek: List[DeepSeekAuths]
 
     bing: List[BingCookiePath]
     """Bing Account Infos"""
@@ -81,6 +84,7 @@ class BotManager:
     def __init__(self, config: Config) -> None:
         self.config = config
         self.openai = config.openai.accounts if config.openai else []
+        self.deepseek = config.deepseek.accounts if config.deepseek else []
         self.bing = config.bing.accounts if config.bing else []
         self.bard = config.bard.accounts if config.bard else []
         self.poe = config.poe.accounts if config.poe else []
@@ -141,6 +145,7 @@ class BotManager:
         self.bots = {
             "chatgpt-web": [],
             "openai-api": [],
+            "deepseek-chat": [],
             "poe-web": [],
             "bing-cookie": [],
             "bard-cookie": [],
@@ -160,6 +165,7 @@ class BotManager:
             'slack': self.login_slack,
             'xinghuo': self.login_xinghuo,
             'openai': self.handle_openai,
+            'deepseek': self.login_deepseek,
             'yiyan': self.login_yiyan,
             'chatglm': self.login_chatglm,
             'gpt4free': self.login_gpt4free
@@ -188,6 +194,7 @@ class BotManager:
                 "slack-accesstoken": "slack-claude",
                 "chatgpt-web": "chatgpt-web",
                 "openai-api": "chatgpt-api",
+                "deepseek-chat": "deepseek-chat",
                 "bing-cookie": "bing",
                 "bard-cookie": "bard",
                 "yiyan-cookie": "yiyan",
@@ -398,6 +405,41 @@ class BotManager:
             logger.error("所有 OpenAI 账号均登录失败！")
         logger.success(f"成功登录 {counter}/{len(self.openai)} 个 OpenAI 账号！")
 
+    async def login_deepseek(self):  # sourcery skip: raise-specific-error
+        counter = 0
+        for i, account in enumerate(self.deepseek):
+            logger.info("正在登录第 {i} 个 DeepSeek 账号", i=i + 1)
+            try:
+                if isinstance(account, DeepSeekApiKey):
+                    bot = await self.__login_deepseek_apikey(account)
+                    self.bots["deepseek-chat"].append(bot)
+                else:
+                    raise Exception(f"未定义的登录类型")
+                bot.id = i
+                bot.account = account
+                logger.success("登录成功！", i=i + 1)
+                counter = counter + 1
+            except httpx.HTTPStatusError as e:
+                logger.error("登录失败! 可能是账号密码错误，或者 Endpoint 不支持 该登录方式。{exc}", exc=e)
+            except (
+                    ConnectTimeout, RequestException, SSLError, urllib3.exceptions.MaxRetryError,
+                    ClientConnectorError) as e:
+                logger.error("登录失败! 连接 DeepSeek 服务器失败,请更换代理节点重试！{exc}", exc=e)
+            except APIKeyNoFundsError:
+                logger.error("登录失败! API 账号余额不足，无法继续使用。")
+            except Exception as e:
+                err_msg = str(e)
+                if "failed to connect to the proxy server" in err_msg:
+                    logger.error("{exc}", exc=e)
+                elif "All login method failed" in err_msg:
+                    logger.error("登录失败! 所有登录方法均已失效,请检查 IP、代理或者登录信息是否正确{exc}", exc=e)
+                else:
+                    logger.error("未知错误：")
+                    logger.exception(e)
+        if len(self.bots) < 1:
+            logger.error("所有 DeepSeek 账号均登录失败！")
+        logger.success(f"成功登录 {counter}/{len(self.deepseek)} 个 DeepSeek 账号！")
+
     def __login_browser(self, account) -> ChatGPTBrowserChatbot:
         logger.info("模式：浏览器登录")
         logger.info("这需要你拥有最新版的 Chrome 浏览器。")
@@ -557,6 +599,14 @@ class BotManager:
         )
         logger.warning("在查询 API 额度时遇到问题，请自行确认额度。")
         return account
+    
+    async def __login_deepseek_apikey(self, account):
+        logger.info("尝试使用 api_key 登录中...")
+        logger.info(
+            f"当前检查的 API Key 为：{account.api_key[:8]}******{account.api_key[-4:]}"
+        )
+        logger.warning("在查询 API 额度时遇到问题，请自行确认额度。")
+        return account
 
     def pick(self, llm: str):
         if llm not in self.roundrobin:
@@ -572,6 +622,8 @@ class BotManager:
             bot_info += f"* {LlmName.ChatGPT_Web.value} : OpenAI ChatGPT 网页版\n"
         if len(self.bots['openai-api']) > 0:
             bot_info += f"* {LlmName.ChatGPT_Api.value} : OpenAI ChatGPT API版\n"
+        if len(self.bots['deepseek-chat']) > 0:
+            bot_info += f"* {LlmName.ChatGPT_Api.value} : DeepSeek Chat3\n"
         if len(self.bots['bing-cookie']) > 0:
             bot_info += f"* {LlmName.BingC.value} : 微软 New Bing (创造力)\n"
             bot_info += f"* {LlmName.BingB.value} : 微软 New Bing (平衡)\n"

@@ -12,6 +12,7 @@ from loguru import logger
 from adapter.baidu.yiyan import YiyanAdapter
 from adapter.botservice import BotAdapter
 from adapter.chatgpt.api import ChatGPTAPIAdapter
+from adapter.deepseek.api import DeepSeekAPIAdapter
 from adapter.chatgpt.web import ChatGPTWebAdapter
 from adapter.claude.slack import ClaudeInSlackAdapter
 from adapter.google.bard import BardAdapter
@@ -90,6 +91,8 @@ class ConversationContext:
             self.adapter = ChatGPTWebAdapter(self.session_id)
         elif _type == LlmName.ChatGPT_Api.value:
             self.adapter = ChatGPTAPIAdapter(self.session_id)
+        elif _type == LlmName.DeepSeek.value:
+            self.adapter = DeepSeekAPIAdapter(self.session_id)
         elif PoeBot.parse(_type):
             self.adapter = PoeAdapter(self.session_id, PoeBot.parse(_type))
         elif _type == LlmName.Bing.value:

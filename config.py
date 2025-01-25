@@ -100,6 +100,13 @@ class OpenAIAuths(BaseModel):
 
     accounts: List[Union[OpenAIEmailAuth, OpenAISessionTokenAuth, OpenAIAccessTokenAuth, OpenAIAPIKey]] = []
 
+class DeepSeekApiKey(BaseModel):
+    api_key: str
+
+class DeepSeekAuths(BaseModel):
+    api_endpoint: Optional[str] = None
+    max_tokens: int = 4000
+    accounts: List[DeepSeekApiKey] = []
 
 class OpenAIAuthBase(BaseModel):
     mode: str = "browserless"
@@ -563,6 +570,7 @@ class Config(BaseModel):
 
     # === Account Settings ===
     openai: OpenAIAuths = OpenAIAuths()
+    deepseek: DeepSeekAuths = DeepSeekAuths()
     bing: BingAuths = BingAuths()
     bard: BardAuths = BardAuths()
     azure: AzureConfig = AzureConfig()

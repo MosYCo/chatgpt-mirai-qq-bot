@@ -60,6 +60,15 @@ class Image(GraiaImage):
                 return data
 
 
+def message_to_str(message):
+    if isinstance(message, list):
+        # 只处理列表中的文本消息部分
+        return ' '.join(segment.get('data', {}).get('text', '') for segment in message if segment.get('type') == 'text')
+    elif isinstance(message, str):
+        return message
+    else:
+        return ''
+
 # TODO: use MessageSegment
 # https://github.com/nonebot/aiocqhttp/blob/master/docs/common-topics.md
 def transform_message_chain(text: str) -> MessageChain:
@@ -92,7 +101,8 @@ def transform_message_chain(text: str) -> MessageChain:
     if text_segment := text[start:]:
         messages.append(Plain(text_segment))
 
-    return MessageChain(*messages)
+    # 传递 __root__ 参数到 MessageChain
+    return MessageChain(__root__=messages)
 
 
 def transform_from_message_chain(chain: MessageChain):
@@ -136,16 +146,17 @@ FriendTrigger = DetectPrefix(config.trigger.prefix + config.trigger.prefix_frien
 
 @bot.on_message('private')
 async def _(event: Event):
-    if event.message.startswith('.'):
+    message_str = message_to_str(event.message)
+    if message_str.startswith('.'):
         return
-    chain = transform_message_chain(event.message)
+    chain = transform_message_chain(message_str)
     try:
         msg = await FriendTrigger(chain, None)
     except:
-        logger.debug(f"丢弃私聊消息：{event.message}（原因：不符合触发前缀）")
+        logger.debug(f"丢弃私聊消息：{message_str}（原因：不符合触发前缀）")
         return
 
-    logger.debug(f"私聊消息：{event.message}")
+    logger.debug(f"私聊消息：{message_str}")
 
     try:
         await handle_message(
@@ -168,6 +179,7 @@ GroupTrigger = [MentionMe(config.trigger.require_mention != "at"), DetectPrefix(
 
 @bot.on_message('group')
 async def _(event: Event):
+    event.message = message_to_str(event.message)
     if event.message.startswith('.'):
         return
     chain = transform_message_chain(event.message)
@@ -192,6 +204,7 @@ async def _(event: Event):
 
 @bot.on_message()
 async def _(event: Event):
+    event.message = message_to_str(event.message)
     if event.message != ".重新加载配置文件":
         return
     if event.user_id != config.onebot.manager_qq:
@@ -207,6 +220,7 @@ async def _(event: Event):
 
 @bot.on_message()
 async def _(event: Event):
+    event.message = message_to_str(event.message)
     pattern = r"\.设置\s+(\w+)\s+(\S+)\s+额度为\s+(\d+)\s+条/小时"
     match = re.match(pattern, event.message.strip())
     if not match:
@@ -226,6 +240,7 @@ async def _(event: Event):
 
 @bot.on_message()
 async def _(event: Event):
+    event.message = message_to_str(event.message)
     pattern = r"\.设置\s+(\w+)\s+(\S+)\s+画图额度为\s+(\d+)\s+个/小时"
     match = re.match(pattern, event.message.strip())
     if not match:
@@ -245,6 +260,7 @@ async def _(event: Event):
 
 @bot.on_message()
 async def _(event: Event):
+    event.message = message_to_str(event.message)
     pattern = r"\.查看\s+(\w+)\s+(\S+)\s+的使用情况"
     match = re.match(pattern, event.message.strip())
     if not match:
@@ -267,6 +283,7 @@ async def _(event: Event):
 
 @bot.on_message()
 async def _(event: Event):
+    event.message = message_to_str(event.message)
     pattern = r"\.查看\s+(\w+)\s+(\S+)\s+的画图使用情况"
     match = re.match(pattern, event.message.strip())
     if not match:
@@ -290,7 +307,7 @@ async def _(event: Event):
 @bot.on_message()
 async def _(event: Event):
     pattern = ".预设列表"
-    event.message = str(event.message)
+    event.message = message_to_str(event.message)
     if event.message.strip() != pattern:
         return
 
