@@ -93,7 +93,7 @@ class DeepSeekAPIAdapter(BotAdapter):
         self.latest_role = None
         self.__conversation_keep_from = 0
         self.session_id = session_id
-        self.api_info = botManager.pick('deepseek-chat')
+        self.api_info = botManager.pick('deepseek')
         self.bot = DeepSeekChatbot(self.api_info)
         self.conversation_id = None
         self.parent_id = None
@@ -130,7 +130,7 @@ class DeepSeekAPIAdapter(BotAdapter):
         return True
 
     async def on_reset(self):
-        self.api_info = botManager.pick('deepseek-chat')
+        self.api_info = botManager.pick('deepseek')
         self.bot.api_key = self.api_info.api_key
         self.bot.conversation[self.session_id] = []
         self.bot.engine = self.current_model
@@ -155,7 +155,7 @@ class DeepSeekAPIAdapter(BotAdapter):
         return headers, data
 
     def _prepare_request(self, session_id: str = None, messages: list = None, stream: bool = False):
-        self.api_info = botManager.pick('deepseek-chat')
+        self.api_info = botManager.pick('deepseek')
         api_key = self.api_info.api_key
         api_endpoint = config.openai.api_endpoint or "https://api.deepseek.com"
 
