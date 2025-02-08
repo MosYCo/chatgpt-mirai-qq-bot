@@ -102,6 +102,7 @@ class OpenAIAuths(BaseModel):
 
 class DeepSeekApiKey(BaseModel):
     api_key: str
+    model: Optional[str] = None
 
 class DeepSeekAuths(BaseModel):
     api_endpoint: Optional[str] = None

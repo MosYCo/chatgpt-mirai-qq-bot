@@ -31,7 +31,7 @@ class LlmName(Enum):
     YiYan = "yiyan"
     ChatGLM = "chatglm-api"
     XunfeiXinghuo = "xinghuo"
-    DeepSeek = "deepseek-chat"
+    DeepSeek = "deepseek"
 
 
 class BotPlatform(Enum):

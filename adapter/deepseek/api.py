@@ -7,16 +7,15 @@ from loguru import logger
 from typing import AsyncGenerator
 
 from adapter.botservice import BotAdapter
-from config import OpenAIAPIKey
+from config import DeepSeekApiKey
 from constants import botManager, config
 
 DEFAULT_ENGINE: str = "deepseek-chat"
 
-
-class OpenAIChatbot:
-    def __init__(self, api_info: OpenAIAPIKey):
+class DeepSeekChatbot:
+    def __init__(self, api_info: DeepSeekApiKey):
         self.api_key = api_info.api_key
-        self.engine = DEFAULT_ENGINE
+        self.engine = api_info.model or DEFAULT_ENGINE
         self.presence_penalty = config.openai.gpt_params.presence_penalty
         self.frequency_penalty = config.openai.gpt_params.frequency_penalty
         self.top_p = config.openai.gpt_params.top_p
@@ -87,7 +86,7 @@ class OpenAIChatbot:
 
 
 class DeepSeekAPIAdapter(BotAdapter):
-    api_info: OpenAIAPIKey = None
+    api_info: DeepSeekApiKey = None
     """API Key"""
 
     def __init__(self, session_id: str = "unknown"):
@@ -95,7 +94,7 @@ class DeepSeekAPIAdapter(BotAdapter):
         self.__conversation_keep_from = 0
         self.session_id = session_id
         self.api_info = botManager.pick('deepseek-chat')
-        self.bot = OpenAIChatbot(self.api_info)
+        self.bot = DeepSeekChatbot(self.api_info)
         self.conversation_id = None
         self.parent_id = None
         super().__init__()
@@ -103,6 +102,7 @@ class DeepSeekAPIAdapter(BotAdapter):
         self.current_model = self.bot.engine
         self.supported_models = [
             "deepseek-chat",
+            "deepseek-reasoner"
         ]
 
     def manage_conversation(self, session_id: str, prompt: str):

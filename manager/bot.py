@@ -39,7 +39,7 @@ class BotManager:
     bots: Dict[str, List] = {
         "chatgpt-web": [],
         "openai-api": [],
-        "deepseek-chat": [],
+        "deepseek": [],
         "poe-web": [],
         "bing-cookie": [],
         "bard-cookie": [],
@@ -145,7 +145,7 @@ class BotManager:
         self.bots = {
             "chatgpt-web": [],
             "openai-api": [],
-            "deepseek-chat": [],
+            "deepseek": [],
             "poe-web": [],
             "bing-cookie": [],
             "bard-cookie": [],
@@ -194,7 +194,7 @@ class BotManager:
                 "slack-accesstoken": "slack-claude",
                 "chatgpt-web": "chatgpt-web",
                 "openai-api": "chatgpt-api",
-                "deepseek-chat": "deepseek-chat",
+                "deepseek": "deepseek",
                 "bing-cookie": "bing",
                 "bard-cookie": "bard",
                 "yiyan-cookie": "yiyan",
@@ -412,7 +412,7 @@ class BotManager:
             try:
                 if isinstance(account, DeepSeekApiKey):
                     bot = await self.__login_deepseek_apikey(account)
-                    self.bots["deepseek-chat"].append(bot)
+                    self.bots["deepseek"].append(bot)
                 else:
                     raise Exception(f"未定义的登录类型")
                 bot.id = i
@@ -622,8 +622,8 @@ class BotManager:
             bot_info += f"* {LlmName.ChatGPT_Web.value} : OpenAI ChatGPT 网页版\n"
         if len(self.bots['openai-api']) > 0:
             bot_info += f"* {LlmName.ChatGPT_Api.value} : OpenAI ChatGPT API版\n"
-        if len(self.bots['deepseek-chat']) > 0:
-            bot_info += f"* {LlmName.ChatGPT_Api.value} : DeepSeek Chat3\n"
+        if len(self.bots['deepseek']) > 0:
+            bot_info += f"* {LlmName.ChatGPT_Api.value} : DeepSeek Chat\n"
         if len(self.bots['bing-cookie']) > 0:
             bot_info += f"* {LlmName.BingC.value} : 微软 New Bing (创造力)\n"
             bot_info += f"* {LlmName.BingB.value} : 微软 New Bing (平衡)\n"
